@@ -125,6 +125,31 @@ function pack() {
     die(`${harness} has empty bytecode (abstract contract or basename collision — check [build].skip)`);
   if (bytecode.includes("__$")) die(`${harness} has unlinked libraries — link them before packing`);
 
+  let artifactMetadata;
+  try {
+    artifactMetadata = typeof a.metadata === "string" ? JSON.parse(a.metadata) : a.metadata;
+  } catch {
+    die(`${harness} artifact contains invalid compiler metadata`);
+  }
+  const artifactSettings = artifactMetadata?.settings;
+  const artifactSolc = artifactMetadata?.compiler?.version?.split("+")[0];
+  if (!artifactSettings || !artifactSolc)
+    die(`${harness} artifact is missing compiler version/settings required for reproducibility`);
+  const compilerSettings = {
+    optimizer: {
+      enabled: Boolean(artifactSettings.optimizer?.enabled),
+      runs: Number(artifactSettings.optimizer?.runs ?? 200),
+    },
+    evmVersion: artifactSettings.evmVersion,
+    viaIR: Boolean(artifactSettings.viaIR),
+    metadata: {
+      bytecodeHash: artifactSettings.metadata?.bytecodeHash || "ipfs",
+      ...(artifactSettings.metadata?.appendCBOR === false ? { appendCBOR: false } : {}),
+    },
+  };
+  if (!compilerSettings.evmVersion)
+    die(`${harness} artifact is missing the EVM version required for reproducibility`);
+
   // Inline the FLATTENED source — self-contained (full dependency tree in one file), so CI can
   // recompile it standalone to verify the bytecode, and humans/LLM see everything.
   const sourcePath = m.entry?.source || guessSource(harness);
@@ -143,7 +168,8 @@ function pack() {
     abi: a.abi,
     creationBytecode: bytecode,
     source,
-    solc: m.build?.solc || readToml("foundry.toml").profile?.default?.solc || detectSolc(),
+    solc: artifactSolc,
+    compilerSettings,
   };
   mkdirSync("recon-registry-out", { recursive: true });
   const out = join("recon-registry-out", `${name}.json`);
@@ -252,10 +278,6 @@ function guessSource(contract) {
   }
   return null;
 }
-function detectSolc() {
-  try { return (sh("forge", ["--version"]).match(/solc\s+([0-9.]+)/) || [])[1] || ""; } catch { return ""; }
-}
-
 const USAGE = "usage: recon-registry <init|pack|publish|list> | --version";
 const [, , cmd] = process.argv;
 if (cmd === "--version" || cmd === "-v") {
