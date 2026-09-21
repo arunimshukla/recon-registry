@@ -5,7 +5,7 @@
   "description": "One self-contained deployable contract (a project harness or a standalone mock). Single contract only — a project is one self-contained Setup-style harness, never a multi-contract manifest.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["name", "description", "tags", "abi", "creationBytecode", "source", "solc"],
+  "required": ["name", "description", "tags", "abi", "creationBytecode", "source", "solc", "compilerSettings"],
   "properties": {
     "name": {
       "type": "string",
@@ -34,7 +34,36 @@
     },
     "solc": {
       "type": "string",
-      "description": "solc version the bytecode was built with. CI recompiles `source` with this and asserts the bytecode matches (reproducibility = trust; no per-entry provenance)."
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Exact solc version the bytecode was built with."
+    },
+    "compilerSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["optimizer", "evmVersion", "viaIR", "metadata"],
+      "description": "Code-generation settings required to reproduce creationBytecode.",
+      "properties": {
+        "optimizer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled", "runs"],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "runs": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "evmVersion": { "type": "string", "minLength": 1 },
+        "viaIR": { "type": "boolean" },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bytecodeHash"],
+          "properties": {
+            "bytecodeHash": { "enum": ["ipfs", "bzzr1", "none"] },
+            "appendCBOR": { "type": "boolean" }
+          }
+        }
+      }
     },
     "labels": {
       "type": "array",
