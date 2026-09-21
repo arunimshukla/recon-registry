@@ -53,4 +53,5 @@ and a smoke deploy. On merge, `registry.json` is rebuilt and your entry is live 
 
 ## Schema
 See `schema/entry.schema.json`. Entries: `name, description, tags, abi, creationBytecode, source,
-solc`. No provenance beyond `solc` — trust comes from the CI reproducibility check.
+solc, compilerSettings`. The packer reads compiler settings from the Forge artifact; trust comes
+from the CI reproducibility check.
