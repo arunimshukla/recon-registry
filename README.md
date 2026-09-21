@@ -28,7 +28,8 @@ npx recon-registry publish    # write token → auto-PR; else opens a prefilled 
   creation bytecode embeds and deploys its deps. No multi-contract manifests, no dependency
   ordering.
 - **Entry schema** (`schema/entry.schema.json`): `name, description, tags, abi, creationBytecode,
-  source, solc`. Source is inlined (humans + the LLM read behavior); no heavy provenance.
+  source, solc, compilerSettings`. Source is inlined (humans + the LLM read behavior); compiler
+  version and code-generation settings are pinned so CI can reproduce the bytecode.
 - **Formats:** manifest = TOML (`recon-registry.toml`, human-edited); entries = JSON
   (`entries/*.json`, machine-generated). Same split as `foundry.toml` ↔ `out/*.json`.
 
