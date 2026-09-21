@@ -6,9 +6,17 @@ name: validate
 
 on:
   pull_request:
-    paths: ["entries/**", "schema/**"]
+    paths:
+      - "entries/**"
+      - "schema/**"
+      - "bin/recon-registry.mjs"
+      - ".github/scripts/**"
+      - ".github/workflows/validate.yml"
   push:
     branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
   validate:
@@ -16,9 +24,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Install validation dependencies
+        run: |
+          python3 -m pip install --disable-pip-version-check \
+            "jsonschema==4.25.1" \
+            "solc-select==1.1.0"
 
-      - name: Validate entries (schema + bytecode == recompile(source, solc))
+      - name: Validate entries (schema + bytecode == recompile(source, solc, settings))
         run: |
           python3 .github/scripts/validate_entries.py
 
